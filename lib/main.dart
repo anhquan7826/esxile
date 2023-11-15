@@ -1,16 +1,14 @@
-import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:esxile/constants/app_colors.dart';
+import 'package:esxile/repository/authentication.repo.dart';
+import 'package:esxile/repository/impl/authentication.repo.impl.dart';
+import 'package:esxile/repository/impl/vm_management.repo.impl.dart';
+import 'package:esxile/repository/vm_management.repo.dart';
 import 'package:esxile/routes/routes.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 void main() {
   runApp(const MyApp());
-  doWhenWindowReady(() {
-    appWindow.minSize = const Size(600, 450);
-    appWindow.size = const Size(1280, 720);
-    appWindow.alignment = Alignment.center;
-    appWindow.show();
-  });
 }
 
 class MyApp extends StatelessWidget {
@@ -31,42 +29,16 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       routerConfig: AppRoute.routerConfigs,
       builder: (context, child) {
-        final windowButtonColor = WindowButtonColors(
-          mouseOver: const Color(0xFFD32F2F),
-          mouseDown: const Color(0xFFB71C1C),
-          iconNormal: Colors.white,
-          iconMouseOver: const Color(0xFFFFFFFF),
-        );
-        return Container(
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            border: Border.all(color: Colors.blue),
-            // borderRadius: BorderRadius.circular(12),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Column(
-            children: [
-              WindowTitleBarBox(
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: MoveWindow(),
-                    ),
-                    MinimizeWindowButton(
-                      colors: windowButtonColor,
-                    ),
-                    MaximizeWindowButton(
-                      colors: windowButtonColor,
-                    ),
-                    CloseWindowButton(
-                      colors: windowButtonColor,
-                    ),
-                  ],
-                ),
-              ),
-              if (child != null) Expanded(child: child),
-            ],
-          ),
+        return MultiRepositoryProvider(
+          providers: [
+            RepositoryProvider<AuthenticationRepository>(
+              create: (context) => AuthenticationRepositoryImpl(),
+            ),
+            RepositoryProvider<VMManagementRepository>(
+              create: (context) => VMManagementRepositoryImpl(),
+            ),
+          ],
+          child: child ?? const Placeholder(),
         );
       },
     );
