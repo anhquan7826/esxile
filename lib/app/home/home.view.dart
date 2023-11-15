@@ -4,6 +4,7 @@ import 'package:esxile/app/home/widgets/import_dialog.dart';
 import 'package:esxile/model/vm.model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -18,6 +19,7 @@ class _HomeViewState extends State<HomeView> {
   VirtualMachine? currentSelected;
   final List<VirtualMachine> cloningVM = [];
   final Map<VirtualMachine, int?> exportingVM = {};
+  final Map<String, int?> importingVM = {};
 
   @override
   Widget build(BuildContext context) {
@@ -73,29 +75,37 @@ class _HomeViewState extends State<HomeView> {
             );
           });
         }
+        if (state is ImportingVMState) {
+          setState(() {
+            importingVM[state.name] = state.progress;
+          });
+        }
+        if (state is ImportedVMState) {
+          setState(() {
+            importingVM.remove(state.name);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Virtual machine ${state.name} has been imported.'),
+              ),
+            );
+          });
+        }
+        if (state is ImportVMErrorState) {
+          setState(() {
+            importingVM.remove(state.name);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Cannot import virtual machine ${state.name}! ${state.error}'),
+              ),
+            );
+          });
+        }
       },
       buildWhen: (_, state) {
         return state is VMLoadedState || state is LoadingVMState || state is LoadVMErrorState;
       },
       builder: (context, state) {
         return Scaffold(
-          // appBar: () {
-          //   if (state is VMLoadedState) {
-          //     return AppBar(
-          //       // title: Row(),
-          //       actions: [
-          //         Padding(
-          //           padding: const EdgeInsets.only(right: 16),
-          //           child: FilledButton.icon(
-          //             onPressed: () {},
-          //             icon: const Icon(Icons.import_export_rounded),
-          //             label: const Text('Import'),
-          //           ),
-          //         )
-          //       ],
-          //     );
-          //   }
-          // }.call(),
           body: () {
             if (state is LoadingVMState) {
               return const Center(
@@ -119,38 +129,10 @@ class _HomeViewState extends State<HomeView> {
               return Row(
                 children: [
                   Expanded(
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            const Text('Virtual Machines'),
-                            FilledButton(
-                              onPressed: () {
-                                showDialog(
-                                  context: context,
-                                  builder: (context) {
-                                    return ImportDialig(
-                                      onSubmit: (ovfFile, installationFolder, name) {
-                                        cubit.import(ovfPath: ovfFile, installationPath: installationFolder, name: name);
-                                      },
-                                    );
-                                  },
-                                );
-                              },
-                              child: const Text('Import'),
-                            ),
-                          ],
-                        ),
-                        Expanded(
-                          child: ListView.builder(
-                            itemCount: cubit.vmList.length,
-                            itemBuilder: (context, index) {
-                              return buildVMTile(cubit.vmList[index]);
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
+                    child: buildSidebar(),
+                  ),
+                  const VerticalDivider(
+                    width: 1,
                   ),
                   Expanded(
                     flex: 3,
@@ -158,82 +140,7 @@ class _HomeViewState extends State<HomeView> {
                         ? const Center(
                             child: Text('Select a virtual machine.'),
                           )
-                        : Column(
-                            children: [
-                              Text(currentSelected!.displayName),
-                              Table(
-                                children: [
-                                  TableRow(
-                                    children: [
-                                      const TableCell(
-                                        child: Text('ID'),
-                                      ),
-                                      TableCell(
-                                        child: Text(currentSelected!.id),
-                                      )
-                                    ],
-                                  ),
-                                  TableRow(
-                                    children: [
-                                      const TableCell(
-                                        child: Text('Path'),
-                                      ),
-                                      TableCell(
-                                        child: Text(currentSelected!.path),
-                                      )
-                                    ],
-                                  ),
-                                  TableRow(
-                                    children: [
-                                      const TableCell(
-                                        child: Text('Processors'),
-                                      ),
-                                      TableCell(
-                                        child: Text(currentSelected!.processors.toString()),
-                                      )
-                                    ],
-                                  ),
-                                  TableRow(
-                                    children: [
-                                      const TableCell(
-                                        child: Text('Memory'),
-                                      ),
-                                      TableCell(
-                                        child: Text('${currentSelected!.memory} MB'),
-                                      )
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              Row(
-                                children: [
-                                  FilledButton(
-                                    onPressed: () {
-                                      cubit.clone(currentSelected!);
-                                    },
-                                    child: const Text('Clone this VM'),
-                                  ),
-                                  if (cloningVM.contains(currentSelected)) const CircularProgressIndicator(),
-                                  FilledButton(
-                                    onPressed: () {
-                                      cubit.export(currentSelected!);
-                                    },
-                                    child: const Text('Export to OVF'),
-                                  ),
-                                  if (exportingVM.containsKey(currentSelected))
-                                    CircularProgressIndicator(
-                                      value: exportingVM[currentSelected] == null ? null : (exportingVM[currentSelected]! / 100).toDouble(),
-                                    ),
-                                  FilledButton(
-                                    onPressed: () {
-                                      cubit.delete(currentSelected!);
-                                    },
-                                    child: const Text('Delete this VM'),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
+                        : buildContent(),
                   ),
                 ],
               );
@@ -244,16 +151,258 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
+  Widget buildSidebar() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(bottom: 32),
+            child: Text(
+              'Virtual Machines',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          Expanded(
+            child: ListView(
+              children: [
+                ...cubit.vmList.map((e) {
+                  return buildVMTile(e);
+                }),
+                ...importingVM.entries.map((e) {
+                  return buildLoadingVMTile(
+                    e.key,
+                    progress: e.value == null ? null : e.value! / 100,
+                  );
+                }),
+              ],
+            ),
+          ),
+          TextButton.icon(
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) {
+                  return ImportDialig(
+                    onSubmit: (ovfFile, installationFolder, name) {
+                      cubit.import(ovfPath: ovfFile, installationPath: installationFolder, name: name);
+                    },
+                  );
+                },
+              );
+            },
+            icon: const Icon(Icons.add_rounded),
+            label: const Text('Import'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget buildContent() {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          currentSelected!.displayName,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.only(bottom: 18),
+              child: Text(
+                'Virtual machine informations:',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              ),
+            ),
+            Expanded(
+              child: Table(
+                columnWidths: const {
+                  0: FlexColumnWidth(),
+                  1: FlexColumnWidth(4),
+                },
+                children: [
+                  buildInfoRow('ID', currentSelected!.id),
+                  buildInfoRow('Path', currentSelected!.path),
+                  buildInfoRow('Processor', currentSelected!.processors.toString()),
+                  buildInfoRow('Memory', currentSelected!.memory.toString()),
+                ],
+              ),
+            ),
+            if (cloningVM.contains(currentSelected)) buildProgressIndicator('Cloning ${currentSelected!.displayName}...'),
+            if (exportingVM.containsKey(currentSelected))
+              buildProgressIndicator(
+                'Exporting ${currentSelected!.displayName}...',
+                value: exportingVM[currentSelected] == null ? null : (exportingVM[currentSelected]! / 100).toDouble(),
+              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                FilledButton.icon(
+                  onPressed: cloningVM.contains(currentSelected)
+                      ? null
+                      : () {
+                          cubit.clone(currentSelected!);
+                        },
+                  icon: const Icon(Icons.copy_rounded),
+                  label: const Text('Clone this VM'),
+                ),
+                FilledButton.icon(
+                  onPressed: exportingVM.containsKey(currentSelected)
+                      ? null
+                      : () {
+                          cubit.export(currentSelected!);
+                        },
+                  icon: const Icon(Icons.outbox_rounded),
+                  label: const Text('Export to OVF'),
+                ),
+                FilledButton.icon(
+                  style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Colors.red)),
+                  onPressed: (cloningVM.contains(currentSelected) || exportingVM.containsKey(currentSelected))
+                      ? null
+                      : () {
+                          showDialog<bool>(
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  title: const Text('Warning'),
+                                  content: const Text('Are you sure to delete this virtual machine?'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        context.pop(false);
+                                      },
+                                      child: const Text('Cancel'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        context.pop(true);
+                                      },
+                                      child: const Text(
+                                        'Delete',
+                                        style: TextStyle(color: Colors.red),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }).then((value) {
+                            if (value == true) {
+                              cubit.delete(currentSelected!);
+                            }
+                          });
+                        },
+                  icon: const Icon(Icons.delete_rounded),
+                  label: const Text('Delete this VM'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget buildProgressIndicator(String title, {double? value}) {
+    return Padding(
+      padding: const EdgeInsets.only(
+        top: 8,
+        bottom: 16,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Text(title + ((value == null) ? '' : ' (${(value * 100).round()}%)')),
+          ),
+          LinearProgressIndicator(
+            value: value,
+          ),
+        ],
+      ),
+    );
+  }
+
+  TableRow buildInfoRow(String title, String value) {
+    return TableRow(
+      children: [
+        TableCell(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+              ),
+            ),
+          ),
+        ),
+        TableCell(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 16,
+              ),
+            ),
+          ),
+        )
+      ],
+    );
+  }
+
   Widget buildVMTile(VirtualMachine vm) {
-    return ListTile(
-      selected: currentSelected == vm,
-      leading: const Icon(Icons.computer_rounded),
-      title: Text(vm.displayName),
-      onTap: () {
-        setState(() {
-          currentSelected = vm;
-        });
-      },
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: ListTile(
+        selected: currentSelected == vm,
+        leading: const Icon(Icons.computer_rounded),
+        title: Text(vm.displayName),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: currentSelected == vm
+                ? BorderSide(
+                    color: Colors.blue.shade200,
+                  )
+                : BorderSide.none),
+        onTap: () {
+          setState(() {
+            currentSelected = vm;
+          });
+        },
+      ),
+    );
+  }
+
+  Widget buildLoadingVMTile(String name, {double? progress}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: ListTile(
+        leading: SizedBox(
+          width: 24,
+          height: 24,
+          child: CircularProgressIndicator(
+            value: progress,
+          ),
+        ),
+        title: Text(
+          name,
+          style: const TextStyle(color: Colors.grey),
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
     );
   }
 }

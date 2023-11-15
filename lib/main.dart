@@ -22,10 +22,6 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: mainColor),
         useMaterial3: true,
       ),
-      darkTheme: ThemeData.dark(
-        useMaterial3: true,
-      ),
-      themeMode: ThemeMode.dark,
       debugShowCheckedModeBanner: false,
       routerConfig: AppRoute.routerConfigs,
       builder: (context, child) {

@@ -88,3 +88,30 @@ class DeleteVMState extends HomeState {
   List<Object?> get props => [vm];
 }
 
+class ImportingVMState extends HomeState {
+  const ImportingVMState(this.name, {this.progress});
+  final String name;
+  final int? progress;
+
+  @override
+  List<Object?> get props => [name, progress];
+}
+
+class ImportedVMState extends HomeState {
+  const ImportedVMState(this.name);
+
+  final String name;
+
+  @override
+  List<Object?> get props => [name];
+}
+
+class ImportVMErrorState extends HomeState {
+  const ImportVMErrorState(this.name, this.error);
+
+  final String name;
+  final String error;
+
+  @override
+  List<Object?> get props => [name];
+}

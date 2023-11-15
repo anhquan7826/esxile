@@ -28,17 +28,27 @@ class HomeCubit extends Cubit<HomeState> {
     required String installationPath,
     required String name,
   }) async {
-    await vmRepo.importVirtualMachine(
-      ovfPath: ovfPath,
-      installationPath: installationPath,
-      vmName: name,
-      onProgress: (progress) {},
-    );
+    emit(ImportingVMState(name));
+    try {
+      await vmRepo.importVirtualMachine(
+        ovfPath: ovfPath,
+        installationPath: installationPath,
+        vmName: name,
+        onProgress: (progress) {
+          emit(ImportingVMState(name, progress: progress));
+        },
+      );
+      vmList = await vmRepo.getVirtualMachines();
+      emit(ImportedVMState(name));
+    } catch (e) {
+      emit(ImportVMErrorState(name, e.toString()));
+    }
   }
 
   Future<void> export(VirtualMachine vm) async {
     final path = await FilePicker.platform.getDirectoryPath(
       dialogTitle: 'Choose export folder path',
+      lockParentWindow: true,
     );
     if (path == null) {
       return;

@@ -33,44 +33,73 @@ class _LoginViewState extends State<LoginView> {
         }
       },
       builder: (context, state) => Scaffold(
-        backgroundColor: backgroundColor,
-        body: Row(
-          children: [
-            Expanded(
+        body: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 500),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  TextField(
-                    controller: usernameController,
-                    decoration: const InputDecoration(
-                      label: Text('Username'),
+                  const Text(
+                    'ESXile',
+                    style: TextStyle(fontSize: 64, fontWeight: FontWeight.w500),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.only(top: 8, bottom: 16),
+                    child: Text(
+                      'A tool for VMware Workstation for importing and exporting virtual machines using OVFTool.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 18,
+                      ),
                     ),
                   ),
-                  TextField(
-                    controller: passwordController,
-                    decoration: const InputDecoration(
-                      label: Text('Password'),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16, bottom: 8),
+                    child: TextField(
+                      controller: usernameController,
+                      decoration: InputDecoration(
+                        label: const Text('Username'),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
                     ),
-                    obscureText: true,
                   ),
-                  FilledButton(
-                    onPressed: () {
-                      BlocProvider.of<LoginCubit>(context).login(usernameController.text, passwordController.text);
-                    },
-                    child: const Text('Authorize'),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16, top: 8),
+                    child: TextField(
+                      controller: passwordController,
+                      decoration: InputDecoration(
+                        label: const Text('Password'),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      obscureText: true,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: FilledButton(
+                      onPressed: () {
+                        BlocProvider.of<LoginCubit>(context).login(usernameController.text, passwordController.text);
+                      },
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(
+                          vertical: 8,
+                          horizontal: 16,
+                        ),
+                        child: Text('Authorize'),
+                      ),
+                    ),
                   ),
                   if (state is LoggingIn) const CircularProgressIndicator(),
                 ],
               ),
             ),
-            const Expanded(
-              child: Column(
-                children: [
-                  Text('ESXile'),
-                  Text('An ESXi Host Client'),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

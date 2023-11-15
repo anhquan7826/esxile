@@ -86,7 +86,7 @@ class VMManagementRepositoryImpl extends VMManagementRepository {
     });
     final exitCode = await process.exitCode;
     if (exitCode != 0) {
-      throw Exception(await process.stderr.transform(utf8.decoder).transform(const LineSplitter()).last);
+      throw Exception('Exitcode: $exitCode');
     }
     await dio.post('/vms/registration', data: jsonEncode({'name': vmName, 'path': installationPath}));
   }

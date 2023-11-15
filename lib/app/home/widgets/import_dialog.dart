@@ -29,41 +29,56 @@ class _ImportDialigState extends State<ImportDialig> {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            children: [
-              const Expanded(child: Text('OVF File:')),
-              Flexible(
-                flex: 3,
-                child: TextButton(
-                  onPressed: () async {
-                    ovfPath =
-                        (await FilePicker.platform.pickFiles(dialogTitle: 'Choose OVF file...', allowedExtensions: ['ovf'], type: FileType.custom))
-                            ?.files
-                            .single
-                            .path;
-                    setState(() {});
-                  },
-                  child: Text(ovfPath ?? 'Choose...'),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              children: [
+                const Expanded(child: Text('OVF File:')),
+                Flexible(
+                  flex: 3,
+                  child: TextButton(
+                    onPressed: () async {
+                      ovfPath = (await FilePicker.platform.pickFiles(
+                            dialogTitle: 'Choose OVF file...',
+                            initialDirectory: ovfPath,
+                            allowedExtensions: ['ovf'],
+                            type: FileType.custom,
+                            lockParentWindow: true,
+                          ))
+                              ?.files
+                              .single
+                              .path ??
+                          ovfPath;
+                      setState(() {});
+                    },
+                    child: Text(ovfPath ?? 'Choose...'),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-          Row(
-            children: [
-              const Expanded(child: Text('Installlation folder:')),
-              Flexible(
-                flex: 3,
-                child: TextButton(
-                  onPressed: () async {
-                    installationFolder = await FilePicker.platform.getDirectoryPath(
-                      dialogTitle: 'Choose installation folder...',
-                    );
-                    setState(() {});
-                  },
-                  child: Text(installationFolder ?? 'Choose...'),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              children: [
+                const Expanded(child: Text('Installlation folder:')),
+                Flexible(
+                  flex: 3,
+                  child: TextButton(
+                    onPressed: () async {
+                      installationFolder = (await FilePicker.platform.getDirectoryPath(
+                            dialogTitle: 'Choose installation folder...',
+                            initialDirectory: installationFolder,
+                            lockParentWindow: true,
+                          )) ??
+                          installationFolder;
+                      setState(() {});
+                    },
+                    child: Text(installationFolder ?? 'Choose...'),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           Row(
             children: [
@@ -72,6 +87,9 @@ class _ImportDialigState extends State<ImportDialig> {
                 flex: 3,
                 child: TextField(
                   controller: nameController,
+                  decoration: const InputDecoration(
+                    isDense: true,
+                  ),
                   onChanged: (value) => setState(() {}),
                 ),
               ),
