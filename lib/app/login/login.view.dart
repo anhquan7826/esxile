@@ -1,6 +1,5 @@
 import 'package:esxile/app/login/login.cubit.dart';
 import 'package:esxile/app/login/login.state.dart';
-import 'package:esxile/constants/app_colors.dart';
 import 'package:esxile/routes/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -81,7 +80,7 @@ class _LoginViewState extends State<LoginView> {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.only(top: 16),
+                    padding: const EdgeInsets.only(top: 16, bottom: 16),
                     child: FilledButton(
                       onPressed: () {
                         BlocProvider.of<LoginCubit>(context).login(usernameController.text, passwordController.text);

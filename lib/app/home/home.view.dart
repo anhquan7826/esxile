@@ -1,5 +1,6 @@
 import 'package:esxile/app/home/home.cubit.dart';
 import 'package:esxile/app/home/home.state.dart';
+import 'package:esxile/app/home/widgets/edit_dialog.dart';
 import 'package:esxile/app/home/widgets/import_dialog.dart';
 import 'package:esxile/model/vm.model.dart';
 import 'package:flutter/material.dart';
@@ -100,6 +101,11 @@ class _HomeViewState extends State<HomeView> {
             );
           });
         }
+        if (state is EditVMState) {
+          setState(() {
+            currentSelected = cubit.vmList.firstWhere((element) => element.id == state.vm.id);
+          });
+        }
       },
       buildWhen: (_, state) {
         return state is VMLoadedState || state is LoadingVMState || state is LoadVMErrorState;
@@ -187,15 +193,21 @@ class _HomeViewState extends State<HomeView> {
                 context: context,
                 builder: (context) {
                   return ImportDialig(
-                    onSubmit: (ovfFile, installationFolder, name) {
-                      cubit.import(ovfPath: ovfFile, installationPath: installationFolder, name: name);
+                    onSubmit: (ovfFile, installationFolder, name, processors, memory) {
+                      cubit.import(
+                        ovfPath: ovfFile,
+                        installationPath: installationFolder,
+                        name: name,
+                        processors: processors,
+                        memory: memory,
+                      );
                     },
                   );
                 },
               );
             },
             icon: const Icon(Icons.add_rounded),
-            label: const Text('Import'),
+            label: const Text('New Virtual machine'),
           ),
         ],
       ),
@@ -211,6 +223,27 @@ class _HomeViewState extends State<HomeView> {
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: IconButton.filledTonal(
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    return EditDialog(
+                      vm: currentSelected!,
+                      onEdit: (newVM) {
+                        cubit.edit(newVM);
+                      },
+                    );
+                  },
+                );
+              },
+              icon: const Icon(Icons.edit_rounded),
+            ),
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -234,7 +267,7 @@ class _HomeViewState extends State<HomeView> {
                   buildInfoRow('ID', currentSelected!.id),
                   buildInfoRow('Path', currentSelected!.path),
                   buildInfoRow('Processor', currentSelected!.processors.toString()),
-                  buildInfoRow('Memory', currentSelected!.memory.toString()),
+                  buildInfoRow('Memory', '${currentSelected!.memory} MB'),
                 ],
               ),
             ),

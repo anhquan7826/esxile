@@ -4,13 +4,13 @@ import 'package:esxile/repository/esxile.repo.dart';
 abstract class VMManagementRepository extends EsxileRepository {
   Future<List<VirtualMachine>> getVirtualMachines();
 
-  Future<void> editVirtualMachine(VirtualMachine vm, {required List<String> fields});
+  Future<void> editVirtualMachine(String id, {String? name, int? processors, int? memory});
 
   Future<void> cloneVirtualMachine(VirtualMachine vm);
 
   Future<void> deleteVirtualMachine(VirtualMachine vm);
 
-  Future<void> importVirtualMachine({
+  Future<String> importVirtualMachine({
     required String ovfPath,
     required String installationPath,
     required String vmName,

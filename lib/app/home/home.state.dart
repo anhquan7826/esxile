@@ -115,3 +115,12 @@ class ImportVMErrorState extends HomeState {
   @override
   List<Object?> get props => [name];
 }
+
+class EditVMState extends HomeState {
+  const EditVMState(this.vm);
+
+  final VirtualMachine vm;
+  
+  @override
+  List<Object?> get props => [vm];
+}

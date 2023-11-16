@@ -27,16 +27,24 @@ class HomeCubit extends Cubit<HomeState> {
     required String ovfPath,
     required String installationPath,
     required String name,
+    required int processors,
+    required int memory,
   }) async {
     emit(ImportingVMState(name));
     try {
-      await vmRepo.importVirtualMachine(
+      final id = await vmRepo.importVirtualMachine(
         ovfPath: ovfPath,
         installationPath: installationPath,
         vmName: name,
         onProgress: (progress) {
           emit(ImportingVMState(name, progress: progress));
         },
+      );
+      await vmRepo.editVirtualMachine(
+        id,
+        name: name,
+        processors: processors,
+        memory: memory,
       );
       vmList = await vmRepo.getVirtualMachines();
       emit(ImportedVMState(name));
@@ -83,5 +91,16 @@ class HomeCubit extends Cubit<HomeState> {
     await vmRepo.deleteVirtualMachine(vm);
     vmList = await vmRepo.getVirtualMachines();
     emit(DeleteVMState(vm));
+  }
+
+  Future<void> edit(VirtualMachine vm) async {
+    await vmRepo.editVirtualMachine(
+      vm.id,
+      name: vm.displayName,
+      processors: vm.processors,
+      memory: vm.memory,
+    );
+    vmList = await vmRepo.getVirtualMachines();
+    emit(EditVMState(vm));
   }
 }

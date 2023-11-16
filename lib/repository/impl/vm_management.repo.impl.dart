@@ -39,21 +39,25 @@ class VMManagementRepositoryImpl extends VMManagementRepository {
   }
 
   @override
-  Future<void> editVirtualMachine(VirtualMachine vm, {required List<String> fields}) async {
-    if (fields.contains('displayName')) {
-      final configParamResult = await dio.put('/vms/${vm.id}/configparams');
-      // 404
-      if (configParamResult.statusCode != 200) {
-        throw Exception(configParamResult.statusMessage);
-      }
+  Future<void> editVirtualMachine(String id, {String? name, int? processors, int? memory}) async {
+    if (name != null) {
+      await dio.put(
+        '/vms/${id}/params',
+        data: jsonEncode({
+          'name': 'displayName',
+          'value': name,
+        }),
+      );
     }
-    await dio.put(
-      '/vms/${vm.id}',
-      data: jsonEncode({
-        'processors': vm.processors,
-        'memory': vm.memory,
-      }),
-    );
+    if (processors != null || memory != null) {
+      await dio.put(
+        '/vms/$id',
+        data: jsonEncode({
+          if (processors != null) 'processors': processors,
+          if (memory != null) 'memory': memory,
+        }),
+      );
+    }
   }
 
   @override
@@ -68,7 +72,7 @@ class VMManagementRepositoryImpl extends VMManagementRepository {
   }
 
   @override
-  Future<void> importVirtualMachine({
+  Future<String> importVirtualMachine({
     required String ovfPath,
     required String installationPath,
     required String vmName,
@@ -76,19 +80,22 @@ class VMManagementRepositoryImpl extends VMManagementRepository {
   }) async {
     final process = await Process.start(
       'ovftool',
-      [ovfPath, installationPath],
+      ['--name=$vmName', ovfPath, installationPath],
+      runInShell: true,
     );
     onProgress.call(0);
+    String lastLine = '';
     process.stdout.transform(utf8.decoder).transform(const LineSplitter()).listen((line) {
+      lastLine = line;
       if (line.contains('Disk progress')) {
         onProgress(int.parse(RegExp(r'Disk progress: (\d+)%').firstMatch(line)!.group(1)!));
       }
     });
     final exitCode = await process.exitCode;
     if (exitCode != 0) {
-      throw Exception('Exitcode: $exitCode');
+      throw Exception(lastLine);
     }
-    await dio.post('/vms/registration', data: jsonEncode({'name': vmName, 'path': installationPath}));
+    return (await dio.post('/vms/registration', data: jsonEncode({'name': vmName, 'path': '$installationPath/$vmName/$vmName.vmx'}))).data['id'];
   }
 
   @override
@@ -100,16 +107,19 @@ class VMManagementRepositoryImpl extends VMManagementRepository {
     final process = await Process.start(
       'ovftool',
       [vmPath, exportPath],
+      runInShell: true,
     );
     onProgress.call(null);
+    String lastLine = '';
     process.stdout.transform(utf8.decoder).transform(const LineSplitter()).listen((line) {
+      lastLine = line;
       if (line.contains('Disk progress')) {
         onProgress(int.parse(RegExp(r'Disk progress: (\d+)%').firstMatch(line)!.group(1)!));
       }
     });
     final exitCode = await process.exitCode;
     if (exitCode != 0) {
-      throw Exception('Exitcode: $exitCode');
+      throw Exception(lastLine);
     }
   }
 
