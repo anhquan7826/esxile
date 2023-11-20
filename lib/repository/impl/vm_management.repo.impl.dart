@@ -42,7 +42,7 @@ class VMManagementRepositoryImpl extends VMManagementRepository {
   Future<void> editVirtualMachine(String id, {String? name, int? processors, int? memory}) async {
     if (name != null) {
       await dio.put(
-        '/vms/${id}/params',
+        '/vms/$id/params',
         data: jsonEncode({
           'name': 'displayName',
           'value': name,
@@ -61,14 +61,15 @@ class VMManagementRepositoryImpl extends VMManagementRepository {
   }
 
   @override
-  Future<void> cloneVirtualMachine(VirtualMachine vm) async {
-    await dio.post(
+  Future<String> cloneVirtualMachine(VirtualMachine vm) async {
+    final result = await dio.post(
       '/vms',
       data: jsonEncode({
-        'name': vm.displayName,
+        'name': '${vm.displayName}_copy',
         'parentId': vm.id,
       }),
     );
+    return (result.data as Map)['id'].toString();
   }
 
   @override
@@ -126,5 +127,16 @@ class VMManagementRepositoryImpl extends VMManagementRepository {
   @override
   Future<void> deleteVirtualMachine(VirtualMachine vm) async {
     await dio.delete('/vms/${vm.id}');
+  }
+
+  @override
+  Future<void> registerVirtualMachine({required String name, required String path}) async {
+    await dio.post(
+      '/vms/registration',
+      data: jsonEncode({
+        'name': name,
+        'path': path,
+      }),
+    );
   }
 }

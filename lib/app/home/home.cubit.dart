@@ -79,8 +79,10 @@ class HomeCubit extends Cubit<HomeState> {
   Future<void> clone(VirtualMachine vm) async {
     emit(CloningVMState(vm));
     try {
-      await vmRepo.cloneVirtualMachine(vm.copy(displayName: '${vm.displayName}_copy'));
+      final id = await vmRepo.cloneVirtualMachine(vm);
       vmList = await vmRepo.getVirtualMachines();
+      final newVM = vmList.firstWhere((element) => element.id == id);
+      vmRepo.registerVirtualMachine(name: newVM.displayName, path: newVM.path);
       emit(VMClonedState(vm));
     } on Exception catch (e) {
       emit(VMCloneErrorState(vm, e.toString()));

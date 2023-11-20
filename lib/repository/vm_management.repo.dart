@@ -6,7 +6,9 @@ abstract class VMManagementRepository extends EsxileRepository {
 
   Future<void> editVirtualMachine(String id, {String? name, int? processors, int? memory});
 
-  Future<void> cloneVirtualMachine(VirtualMachine vm);
+  Future<String> cloneVirtualMachine(VirtualMachine vm);
+
+  Future<void> registerVirtualMachine({required String name, required String path});
 
   Future<void> deleteVirtualMachine(VirtualMachine vm);
 

@@ -137,7 +137,9 @@ class _ImportDialigState extends State<ImportDialig> {
                   flex: 3,
                   child: TextField(
                     controller: processorsController,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[0-9,\b]')),
+                    ],
                     decoration: const InputDecoration(
                       isDense: true,
                       suffix: Text('Processor'),
@@ -158,7 +160,9 @@ class _ImportDialigState extends State<ImportDialig> {
                   flex: 3,
                   child: TextField(
                     controller: memoryController,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[0-9,\b]')),
+                    ],
                     decoration: const InputDecoration(
                       isDense: true,
                       suffix: Text('MB'),

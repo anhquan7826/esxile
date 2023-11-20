@@ -60,7 +60,9 @@ class _EditDialogState extends State<EditDialog> {
                     padding: const EdgeInsets.only(left: 8),
                     child: TextField(
                       controller: processorsController,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[0-9,\b]')),
+                      ],
                       decoration: const InputDecoration(
                         isDense: true,
                         suffix: Text('Processor'),
@@ -84,7 +86,9 @@ class _EditDialogState extends State<EditDialog> {
                     padding: const EdgeInsets.only(left: 8),
                     child: TextField(
                       controller: memoryController,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[0-9,\b]')),
+                      ],
                       decoration: const InputDecoration(
                         isDense: true,
                         suffix: Text('MB'),
@@ -108,16 +112,15 @@ class _EditDialogState extends State<EditDialog> {
         ),
         TextButton(
           onPressed: ((processorsController.text.isEmpty || int.parse(processorsController.text) > 8) ||
-                  (memoryController.text.isEmpty || int.parse(memoryController.text) > 12228) || nameController.text.trim().isEmpty)
+                  (memoryController.text.isEmpty || int.parse(memoryController.text) > 12228) ||
+                  nameController.text.trim().isEmpty)
               ? null
               : () {
-                  widget.onEdit(
-                    widget.vm.copy(
-                      displayName: nameController.text.trim(),
-                      processors: int.parse(processorsController.text),
-                      memory: int.parse(memoryController.text),
-                    )
-                  );
+                  widget.onEdit(widget.vm.copy(
+                    displayName: nameController.text.trim(),
+                    processors: int.parse(processorsController.text),
+                    memory: int.parse(memoryController.text),
+                  ));
                   context.pop();
                 },
           child: const Text('Done'),
